@@ -1,0 +1,3 @@
+---
+
+registry_path: "{{ docker_registry.fqdn }}:{{ docker_registry.port|string }}"

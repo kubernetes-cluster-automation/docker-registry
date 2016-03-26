@@ -1,0 +1,21 @@
+---
+
+- name: Set docker options needed for a slave
+  set_fact: docker_opts="--exec-opt native.cgroupdriver=cgroupfs --insecure-registry {{ registry_path }}"
+
+- name: Append local options to Docker daemon docker.service
+  become: true
+  lineinfile: dest=/lib/systemd/system/docker.service
+              state=present
+              backrefs=true
+              regexp="^(ExecStart=/usr/bin/docker\s+)(((?!{{ docker_opts }}).)*)$"
+              line="\1 \2 {{ docker_opts }}"
+              create=true
+
+- name: Reload systemd
+  become: true
+  shell: systemctl daemon-reload
+
+- name: Restart Docker 
+  become: true
+  service: name=docker state=restarted 

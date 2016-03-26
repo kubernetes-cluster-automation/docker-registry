@@ -1,0 +1,23 @@
+---
+
+- name: debug registry path
+  set_fact:
+    registry_path: "{{ docker_registry.fqdn }}:{{ docker_registry.port|string }}"
+  tags:
+  - registry-debug
+
+- name: debug registry path
+  debug: msg="{{ registry_path }}"
+  tags:
+  - registry-debug
+
+- name: run new docker registry
+  become: yes
+  include: registry.yml
+  when: inventory_hostname == registry_host or multiple_registry_hosts == true
+
+- name: set up docker docker to use insecure registry
+  become: yes
+  include: docker-setup-insecure-registry.yml
+  when: use_insecure_registry is defined
+

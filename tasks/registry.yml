@@ -1,0 +1,34 @@
+---
+
+- name: install docker-py python module
+  become: yes
+  pip: name="{{item}}" extra_args="--upgrade --ignore-installed" state=present
+  with_items:
+  - docker-py
+  environment: "{{ proxy_env }}"
+  when: internal_repo is not defined
+
+- name: start registry container
+  become: yes
+  docker:
+    ports:
+    - "5000:5000"
+    name: docker-registry
+    pull: missing
+    image: registry:2
+    hostname: docker-registry
+    state: started
+    restart_policy: always
+    volumes:
+    - "{{ docker_registry.volume_path }}:/var/lib/registry"
+    detach: True
+
+# these containers run outside of kubernetes (chicken/egg) and need a means
+#  to be restarted
+- name: render systemd unit file for registry and repository containers
+  become: yes
+  notify: reload systemd
+  template: src=container.service.j2 dest="/etc/systemd/system/{{ item }}.service"
+  with_items:
+    - docker-registry
+  when: is_systemd
