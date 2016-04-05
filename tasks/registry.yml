@@ -1,12 +1,18 @@
 ---
 
+#
+# Need docker-py for running docker-registry
+# /usr filesytem is read-only and can't be mounted rw without a hack to fix:
+# [54538.554328] EXT4-fs (sda3): couldn't mount RDWR because of unsupported optional features (ff000000)
+# 
 - name: install docker-py python module
   become: yes
   pip: name="{{item}}" extra_args="--upgrade --ignore-installed" state=present
   with_items:
   - docker-py
   environment: "{{ proxy_env }}"
-  when: internal_repo is not defined
+#  when: internal_repo is not defined
+  when: internal_repo is not defined and ansible_os_family == 'Debian'
 
 - name: start registry container
   become: yes
@@ -31,4 +37,4 @@
   template: src=container.service.j2 dest="/etc/systemd/system/{{ item }}.service"
   with_items:
     - docker-registry
-  when: is_systemd
+  when: ansible_service_mgr == 'systemd'
